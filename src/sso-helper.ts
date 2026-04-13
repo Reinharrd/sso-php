@@ -9,7 +9,6 @@ export interface SSOConfig {
 export async function generateSSOLoginUrl(config: SSOConfig): Promise<string> {
   const codeVerifier = generateRandomString(64);
 
-  // Store in localStorage for verification after callback
   localStorage.setItem('sso_code_verifier', codeVerifier);
 
   const codeChallenge = await generateCodeChallenge2(codeVerifier);
@@ -25,9 +24,6 @@ export async function generateSSOLoginUrl(config: SSOConfig): Promise<string> {
   return `${config.ssoBaseUrl}/callback?${params.toString()}`;
 }
 
-/**
- * Returns null if the token cannot be decoded.
- */
 export function getSSOTokenPayload(token: string): Record<string, any> | null {
   try {
     const base64Url = token.split('.')[1];
@@ -44,6 +40,27 @@ export function getSSOTokenPayload(token: string): Record<string, any> | null {
     console.error('Failed to parse SSO token payload', error);
     return null;
   }
+}
+
+export interface SSOExchangeConfig {
+  code: string;
+  clientId: string;
+  redirectUri: string;
+}
+
+export function getSSOExchangeBody(config: SSOExchangeConfig) {
+  const codeVerifier = localStorage.getItem('sso_code_verifier') || '';
+  if (!codeVerifier) {
+    throw new Error('Code verifier not found');
+  }
+
+  return {
+    grant_type: 'authorization_code',
+    code: config.code,
+    redirect_uri: config.redirectUri,
+    client_id: config.clientId,
+    code_verifier: codeVerifier,
+  };
 }
 
 export function clearSSOData(): void {

@@ -27,16 +27,13 @@ async function generateCodeChallenge2(codeVerifier) {
 
 // src/sso-helper.ts
 async function generateSSOLoginUrl(config) {
-  const state = generateRandomString(16);
   const codeVerifier = generateRandomString(64);
-  localStorage.setItem("sso_state", state);
   localStorage.setItem("sso_code_verifier", codeVerifier);
   const codeChallenge = await generateCodeChallenge2(codeVerifier);
   const params = new URLSearchParams({
     response_type: "code",
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
-    state,
     code_challenge: codeChallenge,
     code_challenge_method: "S256"
   });
@@ -56,6 +53,19 @@ function getSSOTokenPayload(token) {
     return null;
   }
 }
+function getSSOExchangeBody(config) {
+  const codeVerifier = localStorage.getItem("sso_code_verifier") || "";
+  if (!codeVerifier) {
+    throw new Error("Code verifier not found");
+  }
+  return {
+    grant_type: "authorization_code",
+    code: config.code,
+    redirect_uri: config.redirectUri,
+    client_id: config.clientId,
+    code_verifier: codeVerifier
+  };
+}
 function clearSSOData() {
   localStorage.removeItem("sso_state");
   localStorage.removeItem("sso_code_verifier");
@@ -66,6 +76,7 @@ export {
   generateCodeChallenge2,
   generateRandomString,
   generateSSOLoginUrl,
+  getSSOExchangeBody,
   getSSOTokenPayload
 };
 //# sourceMappingURL=index.mjs.map
