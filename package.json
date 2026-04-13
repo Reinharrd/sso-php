@@ -1,0 +1,30 @@
+{
+  "name": "@hengkianggia/sso-helper",
+  "version": "1.0.0",
+  "description": "Helper package for SSO PKCE integration",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "prepare": "pnpm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "sso",
+    "pkce",
+    "oauth2",
+    "auth"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.3"
+  }
+}
