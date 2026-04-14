@@ -65,8 +65,8 @@ if (payload) {
 
 ---
 
-### 3. `getSSOExchangeBody(config: SSOExchangeConfig)`
-Fungsi ini sangat penting ketika user dikembalikan dari SSO ke aplikasi Anda (Callback). Ia akan menyiapkan Object body untuk ditukar (_exchange_) dengan Access Token. Secara otomatis mengambil `code_verifier` yang dibentuk pada tahap pertama dari `localStorage`.
+### 3. `exchangeSSOToken(config: SSOExchangeConfig)`
+Fungsi ini sangat penting ketika user dikembalikan dari SSO ke aplikasi Anda (Callback). Ia akan melakukan **HTTP Post (fetch) secara langsung** ke endpoint `/oauth/token` untuk menukarkan (_exchange_) authorization code dengan Access Token. Secara otomatis menyesuaikan URL dinamis dari props dan mengambil `code_verifier` yang dibentuk pada tahap pertama dari `localStorage`.
 
 **Tipe Data (Interface):**
 ```typescript
@@ -74,32 +74,33 @@ interface SSOExchangeConfig {
   code: string;         // Kode otorisasi yg didapat dari query parameter URL Callback
   clientId: string;     // Client ID aplikasi
   redirectUri: string;  // URI Redirect yang dikonfigurasi
+  ssoBaseUrl: string;   // URL dasar / Base URL SSO (dinamis untuk staging/production)
 }
 ```
 
 **Contoh Penggunaan:**
 ```typescript
-import { getSSOExchangeBody } from 'package-sso';
+import { exchangeSSOToken } from 'package-sso';
 
 // Misalnya didapatkan dari URL query `?code=xyZ123`
 const authCode = "xyZ123"; 
 
-try {
-  const requestBody = getSSOExchangeBody({
-    code: authCode,
-    clientId: 'app-client-123',
-    redirectUri: 'http://localhost:3000/callback'
-  });
+async function handleSSOCallback() {
+  try {
+    const responseData = await exchangeSSOToken({
+      code: authCode,
+      clientId: 'app-client-123',
+      redirectUri: 'http://localhost:3000/callback',
+      ssoBaseUrl: 'https://api-staging.erlangga.co.id' // via props / env variables
+    });
 
-  // Anda dapat menggunakan `requestBody` ini untuk Post payload Axios/Fetch 
-  // ke Endpoin Token SSO backend Anda.
-  /*
-    axios.post('https://sso.example.com/token', requestBody)
-  */
+    console.log("Token Payload:", responseData);
+    // Simpan token/akses Anda atau update global store/session
 
-} catch (error) {
-  // Menangkap error jika `code_verifier` tidak ditemukan di browser
-  console.error(error.message); 
+  } catch (error) {
+    // Menangkap error jika verifier hilang atau API gagal
+    console.error("Gagal melakukan exchange code:", error.message); 
+  }
 }
 ```
 
