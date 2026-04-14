@@ -78,7 +78,7 @@ export async function exchangeSSOToken(config: SSOExchangeConfig) {
     body: JSON.stringify(body),
   });
 
-  window.location.href = '/'
+  // window.location.href = '/'
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
