@@ -6,7 +6,6 @@ interface SSOConfig {
 declare function generateSSOLoginUrl(config: SSOConfig): Promise<string>;
 declare function getSSOTokenPayload(token: string): Record<string, any> | null;
 interface SSOExchangeConfig {
-    code: string;
     clientId: string;
     redirectUri: string;
     ssoBaseUrl: string;

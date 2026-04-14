@@ -54,13 +54,18 @@ function getSSOTokenPayload(token) {
   }
 }
 async function exchangeSSOToken(config) {
+  const params = new URLSearchParams(window.location.search);
+  const codeParams = params.get("code");
+  if (!codeParams) {
+    throw new Error("Code not found");
+  }
   const codeVerifier = localStorage.getItem("sso_code_verifier") || "";
   if (!codeVerifier) {
     throw new Error("Code verifier not found");
   }
   const body = {
     grant_type: "authorization_code",
-    code: config.code,
+    code: codeParams,
     redirect_uri: config.redirectUri ?? window.location.origin + "/callback",
     client_id: config.clientId,
     code_verifier: codeVerifier
@@ -73,6 +78,7 @@ async function exchangeSSOToken(config) {
     },
     body: JSON.stringify(body)
   });
+  window.location.href = "/";
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "Failed to exchange SSO token");
