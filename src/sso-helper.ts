@@ -42,6 +42,21 @@ export function getSSOTokenPayload(token: string): Record<string, any> | null {
   }
 }
 
+export function getSSOExchangeBody(config: SSOExchangeConfig) {
+  const codeVerifier = localStorage.getItem('sso_code_verifier') || '';
+  if (!codeVerifier) {
+    throw new Error('Code verifier not found');
+  }
+
+  return {
+    grant_type: 'authorization_code',
+    code: config.code,
+    redirect_uri: config.redirectUri,
+    client_id: config.clientId,
+    code_verifier: codeVerifier,
+  };
+}
+
 export interface SSOExchangeConfig {
   code: string;
   clientId: string;
