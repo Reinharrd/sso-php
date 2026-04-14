@@ -53,6 +53,19 @@ function getSSOTokenPayload(token) {
     return null;
   }
 }
+function getSSOExchangeBody(config) {
+  const codeVerifier = localStorage.getItem("sso_code_verifier") || "";
+  if (!codeVerifier) {
+    throw new Error("Code verifier not found");
+  }
+  return {
+    grant_type: "authorization_code",
+    code: config.code,
+    redirect_uri: config.redirectUri,
+    client_id: config.clientId,
+    code_verifier: codeVerifier
+  };
+}
 async function exchangeSSOToken(config) {
   const codeVerifier = localStorage.getItem("sso_code_verifier") || "";
   if (!codeVerifier) {
@@ -90,6 +103,7 @@ export {
   generateCodeChallenge2,
   generateRandomString,
   generateSSOLoginUrl,
+  getSSOExchangeBody,
   getSSOTokenPayload
 };
 //# sourceMappingURL=index.mjs.map

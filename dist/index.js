@@ -25,6 +25,7 @@ __export(index_exports, {
   generateCodeChallenge2: () => generateCodeChallenge2,
   generateRandomString: () => generateRandomString,
   generateSSOLoginUrl: () => generateSSOLoginUrl,
+  getSSOExchangeBody: () => getSSOExchangeBody,
   getSSOTokenPayload: () => getSSOTokenPayload
 });
 module.exports = __toCommonJS(index_exports);
@@ -84,6 +85,19 @@ function getSSOTokenPayload(token) {
     return null;
   }
 }
+function getSSOExchangeBody(config) {
+  const codeVerifier = localStorage.getItem("sso_code_verifier") || "";
+  if (!codeVerifier) {
+    throw new Error("Code verifier not found");
+  }
+  return {
+    grant_type: "authorization_code",
+    code: config.code,
+    redirect_uri: config.redirectUri,
+    client_id: config.clientId,
+    code_verifier: codeVerifier
+  };
+}
 async function exchangeSSOToken(config) {
   const codeVerifier = localStorage.getItem("sso_code_verifier") || "";
   if (!codeVerifier) {
@@ -122,6 +136,7 @@ function clearSSOData() {
   generateCodeChallenge2,
   generateRandomString,
   generateSSOLoginUrl,
+  getSSOExchangeBody,
   getSSOTokenPayload
 });
 //# sourceMappingURL=index.js.map
