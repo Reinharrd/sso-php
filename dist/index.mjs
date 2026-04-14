@@ -54,18 +54,13 @@ function getSSOTokenPayload(token) {
   }
 }
 async function exchangeSSOToken(config) {
-  const params = new URLSearchParams(window.location.search);
-  const codeParams = params.get("code");
-  if (!codeParams) {
-    throw new Error("Code not found");
-  }
   const codeVerifier = localStorage.getItem("sso_code_verifier") || "";
   if (!codeVerifier) {
     throw new Error("Code verifier not found");
   }
   const body = {
     grant_type: "authorization_code",
-    code: codeParams,
+    code: config.code,
     redirect_uri: config.redirectUri ?? window.location.origin + "/callback",
     client_id: config.clientId,
     code_verifier: codeVerifier
