@@ -1,6 +1,6 @@
 {
-  "name": "@hengkianggia/sso-helper",
-  "version": "1.0.2",
+  "name": "@hengkianggia/sso-erlangga",
+  "version": "1.0.0",
   "description": "Helper package for SSO PKCE integration",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

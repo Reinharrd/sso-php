@@ -53,18 +53,31 @@ function getSSOTokenPayload(token) {
     return null;
   }
 }
-function getSSOExchangeBody(config) {
+async function exchangeSSOToken(config) {
   const codeVerifier = localStorage.getItem("sso_code_verifier") || "";
   if (!codeVerifier) {
     throw new Error("Code verifier not found");
   }
-  return {
+  const body = {
     grant_type: "authorization_code",
     code: config.code,
-    redirect_uri: config.redirectUri,
+    redirect_uri: config.redirectUri ?? window.location.origin + "/callback",
     client_id: config.clientId,
     code_verifier: codeVerifier
   };
+  const response = await fetch(`${config.ssoBaseUrl}/oauth/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to exchange SSO token");
+  }
+  return response.json();
 }
 function clearSSOData() {
   localStorage.removeItem("sso_state");
@@ -73,10 +86,10 @@ function clearSSOData() {
 }
 export {
   clearSSOData,
+  exchangeSSOToken,
   generateCodeChallenge2,
   generateRandomString,
   generateSSOLoginUrl,
-  getSSOExchangeBody,
   getSSOTokenPayload
 };
 //# sourceMappingURL=index.mjs.map

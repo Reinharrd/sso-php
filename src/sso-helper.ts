@@ -46,21 +46,39 @@ export interface SSOExchangeConfig {
   code: string;
   clientId: string;
   redirectUri: string;
+  ssoBaseUrl: string;
 }
 
-export function getSSOExchangeBody(config: SSOExchangeConfig) {
+export async function exchangeSSOToken(config: SSOExchangeConfig) {
   const codeVerifier = localStorage.getItem('sso_code_verifier') || '';
   if (!codeVerifier) {
     throw new Error('Code verifier not found');
   }
 
-  return {
+  const body = {
     grant_type: 'authorization_code',
     code: config.code,
-    redirect_uri: config.redirectUri,
+    redirect_uri: config.redirectUri ?? window.location.origin + '/callback',
     client_id: config.clientId,
     code_verifier: codeVerifier,
   };
+
+  const response = await fetch(`${config.ssoBaseUrl}/oauth/token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify(body),
+  });
+
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to exchange SSO token');
+  }
+
+  return response.json();
 }
 
 export function clearSSOData(): void {
