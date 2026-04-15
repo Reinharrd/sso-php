@@ -42,6 +42,13 @@ export function getSSOTokenPayload(token: string): Record<string, any> | null {
   }
 }
 
+export interface SSOExchangeConfig {
+  code?: string;
+  clientId: string;
+  redirectUri: string;
+  ssoBaseUrl?: string;
+}
+
 export function getSSOExchangeBody(config: SSOExchangeConfig) {
   const codeVerifier = localStorage.getItem('sso_code_verifier') || '';
   if (!codeVerifier) {
@@ -57,14 +64,10 @@ export function getSSOExchangeBody(config: SSOExchangeConfig) {
   };
 }
 
-export interface SSOExchangeConfig {
-  code: string;
-  clientId: string;
-  redirectUri: string;
-  ssoBaseUrl: string;
-}
-
 export async function exchangeSSOToken(config: SSOExchangeConfig) {
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
 
   const codeVerifier = localStorage.getItem('sso_code_verifier') || '';
   if (!codeVerifier) {
@@ -73,7 +76,7 @@ export async function exchangeSSOToken(config: SSOExchangeConfig) {
 
   const body = {
     grant_type: 'authorization_code',
-    code: config.code,
+    code: code,
     redirect_uri: config.redirectUri ?? window.location.origin + '/callback',
     client_id: config.clientId,
     code_verifier: codeVerifier,
@@ -89,7 +92,7 @@ export async function exchangeSSOToken(config: SSOExchangeConfig) {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    const errorData = await response.json().catch((err) => (console.error("Gagal login:", err)));
     throw new Error(errorData.message || 'Failed to exchange SSO token');
   }
 
