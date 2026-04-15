@@ -5,19 +5,19 @@ interface SSOConfig {
 }
 declare function generateSSOLoginUrl(config: SSOConfig): Promise<string>;
 declare function getSSOTokenPayload(token: string): Record<string, any> | null;
+interface SSOExchangeConfig {
+    code?: string;
+    clientId: string;
+    redirectUri: string;
+    ssoBaseUrl?: string;
+}
 declare function getSSOExchangeBody(config: SSOExchangeConfig): {
     grant_type: string;
-    code: string;
+    code: string | undefined;
     redirect_uri: string;
     client_id: string;
     code_verifier: string;
 };
-interface SSOExchangeConfig {
-    code: string;
-    clientId: string;
-    redirectUri: string;
-    ssoBaseUrl: string;
-}
 declare function exchangeSSOToken(config: SSOExchangeConfig): Promise<any>;
 declare function clearSSOData(): void;
 

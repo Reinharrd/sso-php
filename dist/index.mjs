@@ -67,13 +67,15 @@ function getSSOExchangeBody(config) {
   };
 }
 async function exchangeSSOToken(config) {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
   const codeVerifier = localStorage.getItem("sso_code_verifier") || "";
   if (!codeVerifier) {
     throw new Error("Code verifier not found");
   }
   const body = {
     grant_type: "authorization_code",
-    code: config.code,
+    code,
     redirect_uri: config.redirectUri ?? window.location.origin + "/callback",
     client_id: config.clientId,
     code_verifier: codeVerifier
@@ -87,7 +89,7 @@ async function exchangeSSOToken(config) {
     body: JSON.stringify(body)
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    const errorData = await response.json().catch((err) => console.error("Gagal login:", err));
     throw new Error(errorData.message || "Failed to exchange SSO token");
   }
   return response.json();
