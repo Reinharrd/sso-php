@@ -84,6 +84,7 @@ export async function exchangeSSOToken(config: SSOExchangeConfig) {
 
   const response = await fetch(`${config.ssoBaseUrl}/oauth/token`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
