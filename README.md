@@ -5,7 +5,7 @@ Library bantuan SSO OAuth2 dengan **PKCE** untuk PHP. `code_verifier` disimpan d
 ## Instalasi
 
 ```bash
-composer require Reinharrd/sso-erlangga
+composer require reinharrd/sso-erlangga
 ```
 
 Atau salin `autoload.php`, `helper.php`, dan `sso-helper.php` ke project Anda lalu:

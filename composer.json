@@ -1,5 +1,5 @@
 {
-  "name": "Reinharrd/sso-erlangga",
+  "name": "reinharrd/sso-erlangga",
   "description": "Helper SSO OAuth2 + PKCE untuk PHP (session, bukan browser)",
   "type": "library",
   "license": "ISC",
