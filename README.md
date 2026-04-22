@@ -5,7 +5,7 @@ Library bantuan SSO OAuth2 dengan **PKCE** untuk PHP. `code_verifier` disimpan d
 ## Instalasi
 
 ```bash
-composer require hengkianggia/sso-erlangga
+composer require Reinharrd/sso-erlangga
 ```
 
 Atau salin `autoload.php`, `helper.php`, dan `sso-helper.php` ke project Anda lalu:
@@ -18,13 +18,13 @@ require_once __DIR__ . '/path/to/autoload.php';
 
 Namespace: `SsoErlangga`
 
-| Fungsi | Keterangan |
-|--------|------------|
-| `generateSSOLoginUrl($config)` | Buat URL authorize; simpan PKCE verifier di session |
-| `exchangeSSOToken($config)` | POST ke `{ssoBaseUrl}/oauth/token`, ambil `code` dari `$config` atau `$_GET` |
-| `getSSOExchangeBody($config)` | Body JSON untuk exchange (jika Anda POST manual) |
-| `getSSOTokenPayload($jwt)` | Decode payload JWT (bagian tengah) |
-| `clearSSOData()` | Hapus `sso_state`, `sso_code_verifier`, `sso_token` dari session |
+| Fungsi                         | Keterangan                                                                   |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| `generateSSOLoginUrl($config)` | Buat URL authorize; simpan PKCE verifier di session                          |
+| `exchangeSSOToken($config)`    | POST ke `{ssoBaseUrl}/oauth/token`, ambil `code` dari `$config` atau `$_GET` |
+| `getSSOExchangeBody($config)`  | Body JSON untuk exchange (jika Anda POST manual)                             |
+| `getSSOTokenPayload($jwt)`     | Decode payload JWT (bagian tengah)                                           |
+| `clearSSOData()`               | Hapus `sso_state`, `sso_code_verifier`, `sso_token` dari session             |
 
 **`$config` login:** `clientId`, `redirectUri`, `ssoBaseUrl`  
 **`$config` exchange:** `clientId`, `redirectUri` (opsional; default origin + `/callback`), `ssoBaseUrl`, `code` (opsional)
