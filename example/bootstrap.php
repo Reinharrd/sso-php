@@ -1,21 +1,19 @@
 <?php
 
-declare(strict_types=1);
-
-require_once __DIR__ . '/../autoload.php';
+require_once dirname(__FILE__) . '/../autoload.php';
 
 /**
- * @return array{clientId: string, redirectUri: string, ssoBaseUrl: string}
+ * @return array
  */
-function example_sso_config(): array
+function example_sso_config()
 {
     static $cached = null;
     if ($cached !== null) {
         return $cached;
     }
-    $path = __DIR__ . '/config.php';
+    $path = dirname(__FILE__) . '/config.php';
     if (!is_file($path)) {
-        throw new \RuntimeException(
+        throw new RuntimeException(
             'Buat config.php dari config.example.php dan isi clientId, redirectUri, ssoBaseUrl.'
         );
     }

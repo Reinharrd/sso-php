@@ -1,6 +1,4 @@
 <?php
 
-declare(strict_types=1);
-
-require_once __DIR__ . '/helper.php';
-require_once __DIR__ . '/sso-helper.php';
+require_once dirname(__FILE__) . '/helper.php';
+require_once dirname(__FILE__) . '/sso-helper.php';

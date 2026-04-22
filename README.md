@@ -1,8 +1,12 @@
 # sso-erlangga (PHP)
 
-Library bantuan **SSO OAuth2 dengan PKCE** untuk PHP. `code_verifier` disimpan di **session** (`$_SESSION`), sehingga cocok untuk aplikasi server-side (CodeIgniter 3, Laravel, atau PHP biasa) tanpa JavaScript di browser.
+Library bantuan **SSO OAuth2 dengan PKCE** untuk PHP. `code_verifier` disimpan di **session** (`$_SESSION`), sehingga cocok untuk aplikasi server-side (termasuk CodeIgniter 3) tanpa JavaScript di browser.
 
 Paket Composer: **`reinharrd/sso-erlangga`**.
+
+**Kompatibilitas runtime:** PHP **≥ 5.2.4** (tanpa namespace; fungsi global dengan awalan `sso_`). Untuk keamanan dan entropi PKCE yang lebih baik, disarankan **PHP 5.3+** dengan ekstensi `openssl` (atau **PHP 7+** dengan `random_bytes` jika Anda fork/menambah sendiri).
+
+> **Catatan Composer:** Perintah `composer install` di mesin pengembangan biasanya membutuhkan PHP jauh lebih baru daripada 5.2; itu normal. Yang penting, **server / aplikasi** yang memuat library ini memenuhi `>= 5.2.4` jika Anda menargetkan lingkungan lawas.
 
 ---
 
@@ -10,10 +14,12 @@ Paket Composer: **`reinharrd/sso-erlangga`**.
 
 | Persyaratan | Keterangan |
 |-------------|------------|
-| PHP | ≥ 7.4 |
+| PHP | ≥ 5.2.4 (`composer.json`) |
 | `ext-json` | Wajib |
-| `ext-curl` | Sangat disarankan (HTTP ke endpoint token; tanpa ini dipakai fallback `streams`) |
-| Session | PHP session harus bisa dipakai sebelum redirect ke SSO dan saat kembali ke callback (satu browser, cookie konsisten) |
+| `ext-hash` | Wajib untuk `hash('sha256', …)` (PKCE); pada build PHP umum sudah ada |
+| `ext-curl` | Sangat disarankan (HTTP ke endpoint token; tanpa ini dipakai fallback `file_get_contents`) |
+| `ext-openssl` | Disarankan di PHP 5.3+ untuk `openssl_random_pseudo_bytes` (verifier lebih kuat) |
+| Session | Session harus aktif konsisten sebelum redirect ke SSO dan saat kembali ke callback |
 
 ---
 
@@ -67,178 +73,113 @@ composer update reinharrd/sso-erlangga
 
 ### Memuat library di kode
 
-Setelah `composer install`, autoload Composer akan mendaftarkan fungsi lewat `files`. Pastikan **autoload vendor** sudah di-require **sekali** di entry point aplikasi:
+Setelah `composer install`, autoload Composer mendaftarkan fungsi lewat `files`. Muat vendor sekali di entry point:
 
 ```php
 <?php
 
-require_once __DIR__ . '/vendor/autoload.php';
-
-// Fungsi namespace SsoErlangga sekarang tersedia.
+require_once dirname(__FILE__) . '/vendor/autoload.php';
 ```
 
-Tidak perlu `require` manual `autoload.php` paket jika Anda sudah memuat `vendor/autoload.php`.
+Tanpa Composer, salin `autoload.php`, `helper.php`, dan `sso-helper.php` lalu:
+
+```php
+require_once dirname(__FILE__) . '/path/ke/autoload.php';
+```
 
 ---
 
 ## Prasyarat di penyedia SSO
 
-Sebelum mengintegrasikan aplikasi:
-
 1. Daftarkan aplikasi di konsol SSO.
-2. Catat **Client ID** dan **base URL** SSO (tanpa slash di akhir), misalnya `https://sso.example.com`.
-3. Daftarkan **Redirect URI** — harus **sama persis** dengan URL callback di aplikasi Anda (skema `http`/`https`, host, port, path, dan ada/tidaknya `index.php`).
-
-Contoh redirect URI untuk lokal:
-
-- `http://kelasku.test/index.php/auth/sso_callback`
-- `https://app.example.com/auth/sso_callback`
+2. Catat **Client ID** dan **base URL** SSO (tanpa slash di akhir).
+3. Daftarkan **Redirect URI** sama persis dengan callback aplikasi (skema, host, port, path, `index.php` jika dipakai).
 
 ---
 
 ## Alur integrasi (ringkas)
 
-1. User membuka halaman “Login SSO” di aplikasi Anda.
-2. Aplikasi memanggil `generateSSOLoginUrl()` → library menyimpan PKCE verifier di `$_SESSION` dan mengembalikan URL authorize.
-3. Aplikasi mengarahkan user ke URL tersebut (`header('Location: ...')` atau `redirect()`).
-4. User login di SSO; SSO mengarahkan kembali ke **redirect URI** Anda dengan query `?code=...`.
-5. Di handler callback, panggil `exchangeSSOToken()` dengan `clientId`, `redirectUri` (sama seperti langkah 2), dan `ssoBaseUrl`. Kode otorisasi diambil dari `$_GET['code']` jika Anda tidak mengisi `code` di config.
-6. Simpan token yang dikembalikan (session DB, dll.) sesuai kebijakan aplikasi. Panggil `clearSSOData()` setelah sukses jika ingin membersihkan verifier dari session.
+1. Panggil `sso_generate_login_url()` → verifier disimpan di `$_SESSION`, dapat URL authorize.
+2. Redirect user ke URL tersebut.
+3. Setelah login, SSO mengarahkan ke redirect URI dengan `?code=...`.
+4. Di callback panggil `sso_exchange_token()` dengan `clientId`, `redirectUri`, `ssoBaseUrl` (dan opsional `code`).
+5. Simpan token; panggil `sso_clear_sso_data()` bila ingin membersihkan data SSO di session.
 
 ---
 
 ## Referensi API
 
-Semua fungsi berada di namespace **`SsoErlangga`**. Gunakan:
+Semua fungsi **global** (bukan namespace). Nama diawali `sso_` untuk mengurangi bentrok.
+
+| Fungsi | Keterangan |
+|--------|------------|
+| `sso_generate_login_url($config)` | URL authorize + simpan PKCE di session |
+| `sso_exchange_token($config)` | POST JSON ke `{ssoBaseUrl}/oauth/token` |
+| `sso_get_exchange_body($config)` | Isi body exchange saja (tanpa HTTP) |
+| `sso_get_token_payload($token)` | Decode payload JWT (tengah); gagal → `null` |
+| `sso_clear_sso_data()` | Hapus `sso_state`, `sso_code_verifier`, `sso_token` dari session |
+| `sso_generate_random_string($length)` | Verifier PKCE (biasanya internal) |
+| `sso_generate_code_challenge2($verifier)` | Challenge S256 (biasanya internal) |
+
+`$config` adalah array asosiatif dengan key **`clientId`**, **`redirectUri`**, **`ssoBaseUrl`** (untuk login semua wajib; untuk exchange `redirectUri` boleh kosong → default origin + `/callback`).
+
+### Contoh login
 
 ```php
-use function SsoErlangga\generateSSOLoginUrl;
-use function SsoErlangga\exchangeSSOToken;
-use function SsoErlangga\getSSOExchangeBody;
-use function SsoErlangga\getSSOTokenPayload;
-use function SsoErlangga\clearSSOData;
-```
-
-### `generateSSOLoginUrl(array $config): string`
-
-Membangun URL ke halaman authorize SSO (`{ssoBaseUrl}/callback?...`) dan menyimpan `code_verifier` di `$_SESSION['sso_code_verifier']`.
-
-**`$config` wajib:**
-
-| Key | Tipe | Keterangan |
-|-----|------|------------|
-| `clientId` | `string` | Client ID dari SSO |
-| `redirectUri` | `string` | Callback URL yang terdaftar di SSO |
-| `ssoBaseUrl` | `string` | Base URL SSO, tanpa `/` di akhir |
-
-**Contoh:**
-
-```php
-$url = generateSSOLoginUrl([
-    'clientId'    => getenv('SSO_CLIENT_ID'),
+$url = sso_generate_login_url(array(
+    'clientId'    => 'app-client-id',
     'redirectUri' => 'https://app.example.com/auth/callback',
     'ssoBaseUrl'  => 'https://sso.example.com',
-]);
+));
 header('Location: ' . $url);
 exit;
 ```
 
-Library akan memanggil `session_start()` jika session belum aktif.
-
----
-
-### `exchangeSSOToken(array $config): array`
-
-Mengirim **POST JSON** ke `{ssoBaseUrl}/oauth/token` untuk menukar `code` + PKCE verifier menjadi token.
-
-**`$config`:**
-
-| Key | Wajib | Keterangan |
-|-----|--------|------------|
-| `clientId` | Ya | Client ID |
-| `ssoBaseUrl` | Ya | Base URL SSO |
-| `redirectUri` | Tidak | Jika kosong, dipakai default `origin` dari `$_SERVER` + path `/callback` |
-| `code` | Tidak | Jika tidak diisi, dipakai `$_GET['code']` |
-
-**Return:** array hasil decode JSON dari server (struktur tergantung SSO), misalnya berisi `access_token`, `refresh_token`, dll.
-
-**Contoh:**
+### Contoh callback
 
 ```php
-$tokens = exchangeSSOToken([
-    'clientId'    => getenv('SSO_CLIENT_ID'),
+$tokens = sso_exchange_token(array(
+    'clientId'    => 'app-client-id',
     'redirectUri' => 'https://app.example.com/auth/callback',
     'ssoBaseUrl'  => 'https://sso.example.com',
-]);
+));
+sso_clear_sso_data();
 ```
 
----
-
-### `getSSOExchangeBody(array $config): array`
-
-Mengembalikan array body JSON untuk exchange **tanpa** mengirim HTTP — berguna jika Anda ingin memanggil endpoint token dengan HTTP client sendiri.
-
-Wajib ada `sso_code_verifier` di session. **`$config`** minimal: `clientId`, `redirectUri`; `code` opsional.
-
----
-
-### `getSSOTokenPayload(string $token): ?array`
-
-Mendekode bagian payload JWT (segment kedua). Mengembalikan `null` jika token tidak valid.
+### Decode JWT (opsional)
 
 ```php
-$payload = getSSOTokenPayload($tokens['access_token'] ?? '');
+$payload = sso_get_token_payload(isset($tokens['access_token']) ? $tokens['access_token'] : '');
 ```
-
----
-
-### `clearSSOData(): void`
-
-Menghapus dari session key yang dipakai library: `sso_state`, `sso_code_verifier`, `sso_token`.
-
----
-
-### Fungsi PKCE tingkat rendah
-
-Namespace yang sama:
-
-- `generateRandomString(int $length = 64): string`
-- `generateCodeChallenge2(string $codeVerifier): string`
-
-Biasanya tidak perlu dipanggil langsung; `generateSSOLoginUrl` sudah menggunakannya.
 
 ---
 
 ## Contoh: CodeIgniter 3
 
-1. Pastikan `composer.json` project memuat dependency ini dan `vendor/autoload.php` di-load dari `index.php` atau hook bootstrap CI3, misalnya:
+1. Muat Composer di `index.php` (atau hook), misalnya:
 
    ```php
    require_once FCPATH . 'vendor/autoload.php';
    ```
 
-2. Simpan konfigurasi di `application/config/sso.php` (atau `.env` yang Anda baca manual).
+2. Konfigurasi di `application/config/sso.php`.
 
-3. Controller ringkas:
+3. Controller (PHP 5.2–kompatibel: tanpa `use function`, tanpa `Throwable`):
 
    ```php
    <?php
    defined('BASEPATH') OR exit('No direct script access allowed');
-
-   use function SsoErlangga\generateSSOLoginUrl;
-   use function SsoErlangga\exchangeSSOToken;
-   use function SsoErlangga\clearSSOData;
 
    class Auth extends CI_Controller
    {
        public function sso_login()
        {
            $this->config->load('sso');
-           $url = generateSSOLoginUrl([
+           $url = sso_generate_login_url(array(
                'clientId'    => $this->config->item('sso_client_id'),
                'redirectUri' => $this->config->item('sso_redirect_uri'),
                'ssoBaseUrl'  => $this->config->item('sso_base_url'),
-           ]);
+           ));
            redirect($url);
        }
 
@@ -250,15 +191,14 @@ Biasanya tidak perlu dipanggil langsung; `generateSSOLoginUrl` sudah menggunakan
                return;
            }
            try {
-               $tokens = exchangeSSOToken([
+               $tokens = sso_exchange_token(array(
                    'clientId'    => $this->config->item('sso_client_id'),
                    'redirectUri' => $this->config->item('sso_redirect_uri'),
                    'ssoBaseUrl'  => $this->config->item('sso_base_url'),
-               ]);
-               // TODO: simpan token / set session user aplikasi
-               clearSSOData();
+               ));
+               sso_clear_sso_data();
                redirect('dashboard');
-           } catch (Throwable $e) {
+           } catch (Exception $e) {
                log_message('error', $e->getMessage());
                show_error($e->getMessage(), 500);
            }
@@ -266,13 +206,11 @@ Biasanya tidak perlu dipanggil langsung; `generateSSOLoginUrl` sudah menggunakan
    }
    ```
 
-`sso_redirect_uri` harus **identik** dengan yang terdaftar di SSO.
-
 ---
 
-## Contoh runnable (tanpa framework)
+## Contoh runnable
 
-Folder **`example/`** berisi skrip mini (`public/login.php`, `public/callback.php`). Ikuti **`example/README.txt`** untuk menjalankan dengan `php -S`.
+Folder **`example/`** — lihat **`example/README.txt`**.
 
 ---
 
@@ -280,10 +218,9 @@ Folder **`example/`** berisi skrip mini (`public/login.php`, `public/callback.ph
 
 | Gejala | Kemungkinan penyebab |
 |--------|----------------------|
-| `Code verifier not found` | Session tidak lanjut setelah kembali dari SSO (host berbeda, cookie, atau session belum dimulai) |
-| `invalid_redirect_uri` / ditolak SSO | `redirectUri` di kode tidak sama persis dengan yang terdaftar |
-| Token exchange gagal | `ssoBaseUrl` salah, `client_id` salah, atau `code` sudah dipakai / kedaluwarsa |
-| `127.0.0.1` vs `localhost` | Dianggap redirect URI berbeda — samakan di SSO dan di config |
+| `Code verifier not found` | Session putus setelah redirect (host/cookie/path berbeda) |
+| `invalid_redirect_uri` | `redirectUri` tidak identik dengan yang terdaftar |
+| Token exchange gagal | URL SSO, `client_id`, atau `code` tidak valid / sudah dipakai |
 
 ---
 

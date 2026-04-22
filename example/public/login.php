@@ -1,18 +1,14 @@
 <?php
 
-declare(strict_types=1);
-
-require_once __DIR__ . '/../bootstrap.php';
-
-use function SsoErlangga\generateSSOLoginUrl;
+require_once dirname(__FILE__) . '/../bootstrap.php';
 
 $c = example_sso_config();
 
-$url = generateSSOLoginUrl([
+$url = sso_generate_login_url(array(
     'clientId' => $c['clientId'],
     'redirectUri' => $c['redirectUri'],
     'ssoBaseUrl' => $c['ssoBaseUrl'],
-]);
+));
 
 header('Location: ' . $url, true, 302);
 exit;

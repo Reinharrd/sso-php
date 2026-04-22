@@ -4,11 +4,13 @@
   "type": "library",
   "license": "ISC",
   "require": {
-    "php": ">=7.4",
-    "ext-json": "*"
+    "php": ">=5.2.4",
+    "ext-json": "*",
+    "ext-hash": "*"
   },
   "suggest": {
-    "ext-curl": "Untuk HTTP POST ke endpoint token (fallback: streams)"
+    "ext-curl": "Untuk HTTP POST ke endpoint token (fallback: streams)",
+    "ext-openssl": "Entropi verifier PKCE lebih baik di PHP 5.3+"
   },
   "autoload": {
     "files": [
