@@ -1,0 +1,18 @@
+{
+  "name": "hengkianggia/sso-erlangga",
+  "description": "Helper SSO OAuth2 + PKCE untuk PHP (session, bukan browser)",
+  "type": "library",
+  "license": "ISC",
+  "require": {
+    "php": ">=7.4",
+    "ext-json": "*"
+  },
+  "suggest": {
+    "ext-curl": "Untuk HTTP POST ke endpoint token (fallback: streams)"
+  },
+  "autoload": {
+    "files": [
+      "autoload.php"
+    ]
+  }
+}
